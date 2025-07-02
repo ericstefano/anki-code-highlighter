@@ -70,7 +70,7 @@ class AnkiAssetManager:
     def __init__(self, modify_templates: Callable[[Callable[[str], str]],
                                                   None], media: MediaManager,
                  asset_prefix: str, css_assets: List[str],
-                 js_assets: List[str], guard: str, class_name: str):
+                 js_assets: List[str], js_module_assets: List[str], guard: str, class_name: str):
         """
         :param modify_templates Callable[[Callable[[str], str]],
                                                           None]:
@@ -88,6 +88,7 @@ class AnkiAssetManager:
         self.asset_prefix = asset_prefix
         self.css_assets = css_assets
         self.js_assets = js_assets
+        self.js_module_assets = js_module_assets
         self.guard = guard
         self.class_name = class_name
 
@@ -96,6 +97,7 @@ class AnkiAssetManager:
         self.modify_templates(
             lambda tmpl: append_import_statements(css_assets=self.css_assets,
                                                   js_assets=self.js_assets,
+                                                  js_module_assets=self.js_module_assets,
                                                   guard=self.guard,
                                                   class_name=self.class_name,
                                                   tmpl=tmpl))
@@ -169,7 +171,7 @@ def guards(guard: str) -> Tuple[str, str]:
     return (f'<!-- {guard} BEGIN -->\n', f'<!-- {guard} END -->\n')
 
 
-def append_import_statements(css_assets: List[str], js_assets: List[str],
+def append_import_statements(css_assets: List[str], js_assets: List[str], js_module_assets : List[str],
                              guard: str, class_name: str, tmpl: str) -> str:
     """
     Appends import statements to a card template.
@@ -187,6 +189,9 @@ def append_import_statements(css_assets: List[str], js_assets: List[str],
     ] + [
         f'<script src="{js_asset}" class="{class_name}"></script>\n'
         for js_asset in js_assets
+    ] + [
+        f'<script src="{js_module_asset}" type="module" async class="{class_name}"></script>\n'
+        for js_module_asset in js_module_assets
     ]))
 
     GUARD_BEGIN, GUARD_END = guards(guard)
