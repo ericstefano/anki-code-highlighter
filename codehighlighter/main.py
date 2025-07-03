@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(__file__))
 
 import anki  # type: ignore
 
-from . import dialog, hljs, pygments_highlighter, shiki
+from . import dialog, shiki
 from .ankieditorextra import AnkiEditorInterface, EditorInterface, transform_selection
 from .assets import (
     AnkiAssetManager,
@@ -30,7 +30,6 @@ from .dialog import (
     HighlighterConfig,
     HighlighterWizardState,
     HighlighterWizardStateJSONConverter,
-    HljsConfig,
     ShikiConfig,
     ask_for_highlight_method,
     ask_for_highlighter_config,
@@ -40,12 +39,9 @@ from .serialization import JSONObjectSerializer
 
 addon_path = os.path.dirname(__file__)
 ASSET_PREFIX = '_ch-'
-DEFAULT_CSS_ASSETS = [
-    "_ch-pygments-solarized.css",
-    "_ch-hljs-solarized.css",
-]
+DEFAULT_CSS_ASSETS = []
 
-JS_ASSETS = ["_ch-highlight.js", "_ch-my-highlight.js"]
+JS_ASSETS = []
 JS_MODULE_ASSETS = ["_ch-shiki-highlight-module.js"]
 VERSION_ASSET = '_ch-asset-version.txt'
 GUARD = 'Anki Code Highlighter (Addon 112228974)'
@@ -216,20 +212,8 @@ def highlight_selection(code: PlainString,
     if not highlighter_config:
         return None
 
-    if isinstance(highlighter_config, HljsConfig):
-        return hljs.highlight(code,
-                              language=highlighter_config.language,
-                              block_style=block_style)
-    elif isinstance(highlighter_config, ShikiConfig):
+    if isinstance(highlighter_config, ShikiConfig):
         return shiki.highlight(code, language=highlighter_config.language, block_style=block_style)
-    else:
-        display_style = highlighter_config.display_style
-        html_style = (pygments_highlighter.create_inline_style()
-                      if display_style == DISPLAY_STYLE.INLINE else
-                      pygments_highlighter.create_block_style(block_style))
-
-        return pygments_highlighter.highlight(
-            code, language=highlighter_config.language, style=html_style)
 
 
 def get_shortcut() -> str:

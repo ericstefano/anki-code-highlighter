@@ -16,7 +16,7 @@ from typing import Callable, List, Optional, Tuple, Union
 
 from aqt.qt import QInputDialog
 
-from . import hljs, hljslangs, pygments_highlighter, shikilangs, shiki
+from . import shikilangs, shiki
 from .listextra import index_or
 from .serialization import JSONObjectConverter
 
@@ -25,7 +25,7 @@ __all__ = [
     "HIGHLIGHT_METHOD",
     "highlight_method_name_to_enum",
     "DISPLAY_STYLE",
-    "HljsConfig",
+    "ShikiConfig",
     "ask_for_highlight_method",
     "ask_for_display_style",
     "ask_for_language",
@@ -70,8 +70,6 @@ def showChoiceDialog(parent, title: str, message: str, options: List[str],
 
 @enum.unique
 class HIGHLIGHT_METHOD(Enum):
-    HLJS = 'highlight.js'
-    PYGMENTS = 'pygments'
     SHIKI = 'shiki'
 
 class HighlightMethodJSONConverter(JSONObjectConverter[HIGHLIGHT_METHOD]):
@@ -162,45 +160,6 @@ def ask_for_display_style(parent,
     else:
         return None
 
-
-@dataclass(frozen=True)
-class HljsConfig:
-    language: Optional[hljslangs.Language]
-
-
-class HljsConfigJSONConverter(JSONObjectConverter[HljsConfig]):
-
-    def deconvert(self, json_object) -> Optional[HljsConfig]:
-        if json_object is None:
-            return HljsConfig(None)
-
-        for lang in hljslangs.languages:
-            if lang.alias == json_object:
-                return HljsConfig(lang)
-        return None
-
-    def convert(self, t: HljsConfig):
-        return t.language and t.language.alias
-
-
-def ask_for_hljs_config(parent, current: HljsConfig) -> Optional[HljsConfig]:
-    """
-    Shows a wizard that configures hljs.
-
-    :param parent
-    :param current HljsConfig: The default configuration.
-    :return Optional[HljsConfig]
-    """
-    language_dict = hljs.get_available_languages_as_dict()
-    language_names = list(sorted(language_dict.keys()))
-    language_name = ask_for_language(parent=parent,
-                                     languages=language_names,
-                                     current=current.language
-                                     and current.language.name)
-    if not language_name:
-        return None
-    return HljsConfig(language_dict.get(language_name, None))
-
 @dataclass(frozen=True)
 class ShikiConfig:
     language: Optional[shikilangs.Language]
@@ -211,7 +170,7 @@ class ShikiConfigJSONConverter(JSONObjectConverter[ShikiConfig]):
         if json_object is None:
             return ShikiConfig(None)
 
-        for lang in hljslangs.languages:
+        for lang in shikilangs.languages:
             if lang.alias == json_object:
                 return ShikiConfig(lang)
         return None
@@ -237,54 +196,6 @@ def ask_for_shiki_config(parent, current: ShikiConfig) -> Optional[ShikiConfig]:
         return None
     return ShikiConfig(language_dict.get(language_name, None))
 
-@dataclass(frozen=True)
-class PygmentsConfig:
-    display_style: DISPLAY_STYLE
-    language: str
-
-
-class PygmentsConfigJSONConverter(JSONObjectConverter[PygmentsConfig]):
-
-    def __init__(self):
-        self.display_style_converter = DisplayStyleJSONConverter()
-
-    def deconvert(self, json_object) -> Optional[PygmentsConfig]:
-        return PygmentsConfig(
-            self.display_style_converter.deconvert(
-                json_object['display_style']),
-            json_object['language'],
-        )
-
-    def convert(self, t: PygmentsConfig):
-        config_dict = dataclasses.asdict(t)
-        config_dict['display_style'] = self.display_style_converter.convert(
-            config_dict['display_style'])
-        return config_dict
-
-
-def ask_for_pygments_config(
-        parent, current: PygmentsConfig) -> Optional[PygmentsConfig]:
-    """
-    Shows a wizard that configures hljs.
-
-    :param parent
-    :param current PygmentsConfig: The default configuration.
-    :return Optional[PygmentsConfig]
-    """
-    display_style = ask_for_display_style(parent, current.display_style)
-    if display_style is None:
-        return None
-
-    available_languages = list(
-        sorted(pygments_highlighter.get_available_languages()))
-    language = ask_for_language(parent=parent,
-                                languages=available_languages,
-                                current=current.language)
-    if not language:
-        return None
-
-    return PygmentsConfig(display_style, language)
-
 
 @dataclass
 class HighlighterWizardState:
@@ -293,11 +204,6 @@ class HighlighterWizardState:
 
     It provides useful defaults to preselect.
     """
-    highlighter: HIGHLIGHT_METHOD = HIGHLIGHT_METHOD.HLJS
-    hljs_config: HljsConfig = HljsConfig(
-        hljs.get_available_languages_as_dict().get("C++", None))
-    pygments_config: PygmentsConfig = PygmentsConfig(
-        display_style=DISPLAY_STYLE.BLOCK, language="C++")
     shiki_config: ShikiConfig = ShikiConfig(
         shiki.get_available_languages_as_dict().get("TypeScript", None))
     
@@ -308,28 +214,23 @@ class HighlighterWizardStateJSONConverter(
 
     def __init__(self):
         self.hm = HighlightMethodJSONConverter()
-        self.hc = HljsConfigJSONConverter()
-        self.pc = PygmentsConfigJSONConverter()
         self.sc = ShikiConfigJSONConverter()
 
     def deconvert(self, json_object) -> Optional[HighlighterWizardState]:
         return HighlighterWizardState(
             self.hm.deconvert(json_object['highlighter']),
-            self.hc.deconvert(json_object['hljs_config']),
-            self.pc.deconvert(json_object['pygments_config']),
             self.sc.deconvert(json_object['shiki_config'])
         )
 
     def convert(self, t: HighlighterWizardState):
         config_dict = dict()
         config_dict['highlighter'] = self.hm.convert(t.highlighter)
-        config_dict['hljs_config'] = self.hc.convert(t.hljs_config)
-        config_dict['pygments_config'] = self.pc.convert(t.pygments_config)
+        config_dict['shiki_config'] = self.sc.convert(t.shiki_config)
         return config_dict
 
 
 # The highlighter config chosen by the user.
-HighlighterConfig = Union[HljsConfig, PygmentsConfig, ShikiConfig]
+HighlighterConfig = Union[ShikiConfig]
 
 
 def ask_for_highlighter_config(
@@ -353,22 +254,10 @@ def ask_for_highlighter_config(
 
     state = dataclasses.replace(state, highlighter=highlighter)
 
-    if highlighter == HIGHLIGHT_METHOD.HLJS:
-        hljs_config = ask_for_hljs_config(parent, state.hljs_config)
-        if hljs_config is not None:
-            return (hljs_config,
-                    dataclasses.replace(state, hljs_config=hljs_config))
-    elif highlighter == HIGHLIGHT_METHOD.SHIKI:
+    if highlighter == HIGHLIGHT_METHOD.SHIKI:
         shiki_config = ask_for_shiki_config(parent, state.shiki_config)
         if shiki_config is not None:
             return (shiki_config,
                     dataclasses.replace(state, shiki_config=shiki_config))
-    elif highlighter == HIGHLIGHT_METHOD.PYGMENTS:
-        pygments_config = ask_for_pygments_config(parent,
-                                                  state.pygments_config)
-        if pygments_config is not None:
-            return (pygments_config,
-                    dataclasses.replace(state,
-                                        pygments_config=pygments_config))
 
     return (None, state)
