@@ -1,5 +1,6 @@
 {
-  "block-style": "display:flex; justify-content:center;",
+  "block-style": "padding: 12px; border-radius: 10px; font-size: 14px;",
   "css-files": [],
-  "shortcut": "ctrl+'"
+  "shortcut": "ctrl+'",
+  "default-highlighter": "shiki"
 }

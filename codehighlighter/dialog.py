@@ -180,7 +180,7 @@ class ShikiConfigJSONConverter(JSONObjectConverter[ShikiConfig]):
 
 def ask_for_shiki_config(parent, current: ShikiConfig) -> Optional[ShikiConfig]:
     """
-    Shows a wizard that configures hljs.
+    Shows a wizard that configures shiki.
 
     :param parent
     :param current ShikiConfig: The default configuration.
@@ -204,10 +204,9 @@ class HighlighterWizardState:
 
     It provides useful defaults to preselect.
     """
+    highlighter: HIGHLIGHT_METHOD = HIGHLIGHT_METHOD.SHIKI,
     shiki_config: ShikiConfig = ShikiConfig(
         shiki.get_available_languages_as_dict().get("TypeScript", None))
-    
-
 
 class HighlighterWizardStateJSONConverter(
         JSONObjectConverter[HighlighterWizardState]):
