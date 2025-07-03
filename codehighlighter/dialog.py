@@ -26,6 +26,7 @@ __all__ = [
     "highlight_method_name_to_enum",
     "DISPLAY_STYLE",
     "HljsConfig",
+    "ShikiConfig",
     "ask_for_highlight_method",
     "ask_for_display_style",
     "ask_for_language",
@@ -211,7 +212,7 @@ class ShikiConfigJSONConverter(JSONObjectConverter[ShikiConfig]):
         if json_object is None:
             return ShikiConfig(None)
 
-        for lang in hljslangs.languages:
+        for lang in shikilangs.languages:
             if lang.alias == json_object:
                 return ShikiConfig(lang)
         return None
@@ -325,6 +326,7 @@ class HighlighterWizardStateJSONConverter(
         config_dict['highlighter'] = self.hm.convert(t.highlighter)
         config_dict['hljs_config'] = self.hc.convert(t.hljs_config)
         config_dict['pygments_config'] = self.pc.convert(t.pygments_config)
+        config_dict['shiki_config'] = self.sc.convert(t.shiki_config)
         return config_dict
 
 
